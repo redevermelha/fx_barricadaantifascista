@@ -6,9 +6,8 @@
   <title>Fake-X</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#007BFF">
-  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="/icons/praxis.png" type="image/png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180">
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
   <style>
     :root {
@@ -40,6 +39,7 @@
       padding: 40px;
       transition: background var(--transition), color var(--transition);
     }
+
     body.night-mode {
       background: var(--bg-dark);
       color: var(--text-dark);
@@ -55,6 +55,7 @@
       display: flex;
       gap: var(--gap);
     }
+
     #toolbar button {
       padding: 8px 12px;
       font-size: 1rem;
@@ -65,7 +66,17 @@
       cursor: pointer;
       transition: background-color var(--transition);
     }
-    #toolbar button:hover { background: var(--primary-dark); }
+
+    #toolbar button:hover {
+      background: var(--primary-dark);
+    }
+
+    #userSelect {
+      margin-bottom: 20px;
+      font-size: 1rem;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+    }
 
     #tweetContainer {
       width: 100%;
@@ -78,6 +89,7 @@
       transition: height var(--transition);
       margin-bottom: 20px;
     }
+
     #tweetHeader {
       display: flex;
       align-items: center;
@@ -85,6 +97,7 @@
       margin-bottom: 15px;
       font-family: "Helvetica Neue", sans-serif;
     }
+
     #tweetHeader img {
       width: 55px;
       height: 55px;
@@ -92,8 +105,14 @@
       object-fit: cover;
       border: 2px solid #ddd;
     }
-    #tweetHeader h1 { font-size: 26px; }
-    #tweetHeader p { font-size: 15px; }
+
+    #tweetHeader h1 {
+      font-size: 26px;
+    }
+
+    #tweetHeader p {
+      font-size: 15px;
+    }
 
     #tweetText {
       font-family: "Segoe UI", sans-serif;
@@ -106,7 +125,11 @@
       white-space: pre-wrap;
       word-wrap: break-word;
     }
-    #tweetText:focus { border-color: #aaa; }
+
+    #tweetText:focus {
+      border-color: #aaa;
+    }
+
     #tweetText:empty::before {
       content: attr(placeholder);
       color: #bbb;
@@ -123,6 +146,7 @@
       align-items: center;
       gap: 20px;
     }
+
     #fontSizeSelect {
       padding: 5px 10px;
       font-size: 1rem;
@@ -143,21 +167,52 @@
       transition: background var(--transition);
       display: none;
     }
-    #downloadBtn:hover { background: var(--primary-dark); }
+
+    #downloadBtn:hover {
+      background: var(--primary-dark);
+    }
 
     @media (max-width: 600px) {
-      body { padding: 20px; }
-      #tweetContainer { max-width: 100%; }
-      #tweetHeader h1 { font-size: 22px; }
-      #tweetHeader p { font-size: 13px; }
-      #tweetText { font-size: 18px; padding: 8px; }
-      #toolbar button { padding: 6px 10px; font-size: .9rem; }
-      #optionsContainer { flex-direction: column; align-items: flex-start; }
+      body {
+        padding: 20px;
+      }
+
+      #tweetContainer {
+        max-width: 100%;
+      }
+
+      #tweetHeader h1 {
+        font-size: 22px;
+      }
+
+      #tweetHeader p {
+        font-size: 13px;
+      }
+
+      #tweetText {
+        font-size: 18px;
+        padding: 8px;
+      }
+
+      #toolbar button {
+        padding: 6px 10px;
+        font-size: .9rem;
+      }
+
+      #optionsContainer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <h2>Fake-X</h2>
+
+  <select id="userSelect">
+    <option value="barricada">Barricada Antifascista</option>
+    <option value="corvo">Corvo Socialista ☭</option>
+  </select>
 
   <div id="toolbar">
     <button data-cmd="bold"><strong>B</strong></button>
@@ -167,10 +222,10 @@
 
   <div id="tweetContainer">
     <div id="tweetHeader">
-      <img id="profileImg" src="profileBarricada.jpg" alt="Foto de perfil">
+      <img id="profileImg" src="" alt="Foto de perfil">
       <div>
-        <h1>Barricada Antifascista</h1>
-        <p>@barricada.antifascista</p>
+        <h1 id="profileName"></h1>
+        <p id="profileHandle"></p>
       </div>
     </div>
     <div id="tweetText" contenteditable placeholder="Escreva seu texto aqui..."></div>
@@ -192,21 +247,45 @@
   <button id="downloadBtn">Download PNG</button>
 
   <script>
-    const tweetContainer = document.querySelector('#tweetContainer');
-    const tweetText = document.querySelector('#tweetText');
-    const charCount = document.querySelector('#charCount');
-    const downloadBtn = document.querySelector('#downloadBtn');
-    const fontSizeSelect = document.querySelector('#fontSizeSelect');
-    const nightModeBtn = document.querySelector('#nightModeBtn');
+    const tweetContainer = document.getElementById('tweetContainer');
+    const tweetText = document.getElementById('tweetText');
+    const charCount = document.getElementById('charCount');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    const nightModeBtn = document.getElementById('nightModeBtn');
     const toolbarBtns = document.querySelectorAll('#toolbar [data-cmd]');
+    const profileImg = document.getElementById('profileImg');
+    const profileName = document.getElementById('profileName');
+    const profileHandle = document.getElementById('profileHandle');
+    const userSelect = document.getElementById('userSelect');
     const maxChars = 340;
 
-    const adjustHeight = () => {
-      tweetContainer.style.height = 'auto';
-      tweetContainer.style.height = tweetContainer.scrollHeight + 'px';
+    const profiles = {
+      barricada: {
+        name: 'Barricada Antifascista',
+        handle: '@barricada.antifascista',
+        img: 'profileBarricada.jpg'
+      },
+      corvo: {
+        name: 'Corvo Socialista ☭',
+        handle: '@corvo.socialista',
+        img: 'profileCorvo.jpg'
+      }
     };
 
-    const update = () => {
+    function loadProfile(key) {
+      const profile = profiles[key];
+      profileImg.src = profile.img;
+      profileName.textContent = profile.name;
+      profileHandle.textContent = profile.handle;
+    }
+
+    function adjustHeight() {
+      tweetContainer.style.height = 'auto';
+      tweetContainer.style.height = tweetContainer.scrollHeight + 'px';
+    }
+
+    function update() {
       let text = tweetText.textContent;
       if (text.length > maxChars) {
         text = text.slice(0, maxChars);
@@ -216,7 +295,17 @@
       charCount.textContent = `${maxChars - text.length} caracteres restantes`;
       adjustHeight();
       downloadBtn.style.display = text.trim() ? 'inline-block' : 'none';
-    };
+    }
+
+    function placeCaretAtEnd(el) {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
 
     toolbarBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -240,25 +329,17 @@
 
     downloadBtn.addEventListener('click', () => {
       adjustHeight();
-      html2canvas(tweetContainer, { scale: 3, backgroundColor: null })
-        .then(canvas => {
-          const link = document.createElement('a');
-          link.download = 'conteudo_instagram.png';
-          link.href = canvas.toDataURL();
-          link.click();
-        });
+      html2canvas(tweetContainer, { scale: 3, backgroundColor: null }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'conteudo_instagram.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
     });
 
-    function placeCaretAtEnd(el) {
-      el.focus();
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
+    userSelect.addEventListener('change', () => loadProfile(userSelect.value));
 
+    loadProfile(userSelect.value);
     tweetText.style.fontSize = fontSizeSelect.value;
     update();
   </script>
