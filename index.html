@@ -211,7 +211,8 @@
 
   <select id="userSelect">
     <option value="barricada">Barricada Antifascista</option>
-    <option value="corvo">Corvo Socialista ☭</option>
+    <option value="corvo">Corvo Comunista ☭</option>
+    <option value="papo">Papo de Comuna</option>
   </select>
 
   <div id="toolbar">
@@ -245,6 +246,12 @@
   </div>
 
   <button id="downloadBtn">Download PNG</button>
+  <p id="rotationNote" style="margin-top:10px; font-size:0.9rem; color: #555;">Recomendamos rotacionar a tela para a horizontal antes de gerar imagem. Após a geração da imagem, você pode combinar com vídeo ou foto em seu app de edição favorito.</p>
+
+  <div id="footer" style="margin-top:30px; text-align:center; font-size:0.8rem; color:#777;">
+    <img src="logoRede.png" alt="Logo Rede Vermelha" style="max-width:150px; display:block; margin: 0 auto 10px;">
+    <p>Este produto é uma cortesia para os parceiros da Rede Vermelha - Criadores. Não nos responsabilizamos pelo seu mau uso.</p>
+  </div>
 
   <script>
     const tweetContainer = document.getElementById('tweetContainer');
@@ -261,23 +268,16 @@
     const maxChars = 340;
 
     const profiles = {
-      barricada: {
-        name: 'Barricada Antifascista',
-        handle: '@barricada.antifascista',
-        img: 'profileBarricada.jpg'
-      },
-      corvo: {
-        name: 'Corvo Socialista ☭',
-        handle: '@corvo.socialista',
-        img: 'profileCorvo.jpg'
-      }
+      barricada: { name: 'Barricada Antifascista', handle: '@barricada.antifascista', img: 'profileBarricada.jpg' },
+      corvo:    { name: 'Corvo Comunista ☭', handle: '@corvo.comunista65',         img: 'profileCorvo.jpeg' },
+      papo:     { name: 'Papo de Comuna',          handle: '@papo.de.comuna65',         img: 'profilePapo.jpeg' }
     };
 
     function loadProfile(key) {
-      const profile = profiles[key];
-      profileImg.src = profile.img;
-      profileName.textContent = profile.name;
-      profileHandle.textContent = profile.handle;
+      const p = profiles[key];
+      profileImg.src = p.img;
+      profileName.textContent = p.name;
+      profileHandle.textContent = p.handle;
     }
 
     function adjustHeight() {
@@ -285,8 +285,15 @@
       tweetContainer.style.height = tweetContainer.scrollHeight + 'px';
     }
 
+    function placeCaretAtEnd(el) {
+      el.focus();
+      const range = document.createRange(); range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    }
+
     function update() {
-      let text = tweetText.textContent;
+      let text = tweetText.textContent || '';
       if (text.length > maxChars) {
         text = text.slice(0, maxChars);
         tweetText.textContent = text;
@@ -297,48 +304,14 @@
       downloadBtn.style.display = text.trim() ? 'inline-block' : 'none';
     }
 
-    function placeCaretAtEnd(el) {
-      el.focus();
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-
-    toolbarBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.execCommand(btn.dataset.cmd);
-        update();
-      });
-    });
-
-    nightModeBtn.addEventListener('click', () => {
-      document.body.classList.toggle('night-mode');
-      nightModeBtn.textContent = document.body.classList.contains('night-mode') ? 'Modo Claro' : 'Modo Noturno';
-      update();
-    });
-
-    fontSizeSelect.addEventListener('change', () => {
-      tweetText.style.fontSize = fontSizeSelect.value;
-      adjustHeight();
-    });
-
+    toolbarBtns.forEach(btn => btn.addEventListener('click', () => { document.execCommand(btn.dataset.cmd); update(); }));
+    nightModeBtn.addEventListener('click', () => { document.body.classList.toggle('night-mode'); nightModeBtn.textContent = document.body.classList.contains('night-mode') ? 'Modo Claro' : 'Modo Noturno'; update(); });
+    fontSizeSelect.addEventListener('change', () => { tweetText.style.fontSize = fontSizeSelect.value; adjustHeight(); });
     tweetText.addEventListener('input', update);
+    downloadBtn.addEventListener('click', () => { adjustHeight(); html2canvas(tweetContainer, { scale: 3, backgroundColor: null }).then(canvas => { const link = document.createElement('a'); link.download = 'conteudo_instagram.png'; link.href = canvas.toDataURL(); link.click(); }); });
+    userSelect.addEventListener('change', () => { loadProfile(userSelect.value); update(); });
 
-    downloadBtn.addEventListener('click', () => {
-      adjustHeight();
-      html2canvas(tweetContainer, { scale: 3, backgroundColor: null }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'conteudo_instagram.png';
-        link.href = canvas.toDataURL();
-        link.click();
-      });
-    });
-
-    userSelect.addEventListener('change', () => loadProfile(userSelect.value));
-
+    // Início
     loadProfile(userSelect.value);
     tweetText.style.fontSize = fontSizeSelect.value;
     update();
